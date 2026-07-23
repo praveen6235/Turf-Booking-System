@@ -1,0 +1,17 @@
+{
+  "name": "turf-booking-system",
+  "version": "1.0.0",
+  "description": "Complete MERN Stack Turf Booking System",
+  "main": "index.js",
+  "scripts": {
+    "start": "node backend/src/server.js",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
