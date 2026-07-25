@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchTurfs } from '../features/turfs/turfSlice';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiMapPin, FiStar, FiFilter, FiCheck } from 'react-icons/fi';
+import { FiMapPin, FiStar, FiFilter, FiCheck, FiSearch } from 'react-icons/fi';
 
 const SearchTurf = () => {
   const dispatch = useDispatch();
@@ -16,14 +16,33 @@ const SearchTurf = () => {
   const [priceRange, setPriceRange] = useState(5000); // Default to max price
   const [selectedSports, setSelectedSports] = useState(sportQuery ? [sportQuery] : []);
   const [selectedAmenities, setSelectedAmenities] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Client-side filtering
   const filteredTurfs = turfs.filter(turf => {
-    const matchLocation = !locationQuery || turf.location?.city?.toLowerCase() === locationQuery.toLowerCase();
+    const turfCity = (turf.location?.city || '').toLowerCase();
+    const queryLoc = (locationQuery || '').trim().toLowerCase();
+
+    let matchLocation = !queryLoc;
+    if (queryLoc) {
+      if (queryLoc === 'bengaluru' || queryLoc === 'bangalore') {
+        matchLocation = turfCity === 'bangalore' || turfCity === 'bengaluru';
+      } else {
+        matchLocation = turfCity === queryLoc || turfCity.includes(queryLoc) || queryLoc.includes(turfCity);
+      }
+    }
+
+    const q = searchQuery.trim().toLowerCase();
+    const matchSearch = !q || 
+      turf.name?.toLowerCase().includes(q) ||
+      turf.location?.address?.toLowerCase().includes(q) ||
+      turf.location?.city?.toLowerCase().includes(q) ||
+      turf.sports?.some(s => s.toLowerCase().includes(q));
+
     const matchPrice = turf.pricePerHour <= priceRange;
     const matchSports = selectedSports.length === 0 || selectedSports.some(sport => turf.sports?.includes(sport));
     const matchAmenities = selectedAmenities.length === 0 || selectedAmenities.every(amenity => turf.amenities?.includes(amenity));
-    return matchLocation && matchPrice && matchSports && matchAmenities;
+    return matchLocation && matchSearch && matchPrice && matchSports && matchAmenities;
   });
 
   useEffect(() => {
@@ -117,11 +136,35 @@ const SearchTurf = () => {
 
           {/* Main Content (Grid) */}
           <div className="flex-1">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-text-base mb-2">
-                {locationQuery ? `Turfs in ${locationQuery}` : 'All Available Turfs'}
-              </h1>
-              <p className="text-text-muted">{filteredTurfs.length} venues found</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-text-base mb-1">
+                  {locationQuery ? `Turfs in ${locationQuery}` : 'All Available Turfs'}
+                </h1>
+                <p className="text-text-muted">{filteredTurfs.length} venues found</p>
+              </div>
+
+              {/* Search Bar in Right Side Corner */}
+              <div className="relative w-full sm:w-72 md:w-80 flex items-center">
+                <div className="absolute left-3.5 pointer-events-none flex items-center justify-center text-primary z-10">
+                  <FiSearch className="text-base" />
+                </div>
+                <input 
+                  type="text"
+                  placeholder="Search turf name, area..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-bg-surface/90 backdrop-blur-md border border-border-base rounded-full pl-10 pr-9 py-2.5 text-sm text-text-base placeholder-text-muted focus:outline-none focus:border-primary transition-all shadow-lg"
+                />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 text-text-muted hover:text-text-base text-xs font-bold bg-bg-base/60 hover:bg-bg-base rounded-full w-5 h-5 flex items-center justify-center cursor-pointer z-10"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
 
             {loading && <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div></div>}
@@ -134,28 +177,28 @@ const SearchTurf = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
                   key={turf._id} 
-                  className="bg-bg-surface/80 backdrop-blur-sm border border-border-base rounded-xl overflow-hidden group hover:border-primary/50 transition-colors flex flex-col h-full text-sm shadow-xl"
+                  className="bg-bg-surface/80 backdrop-blur-sm border border-border-base rounded-2xl overflow-hidden group hover:border-primary/80 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(37,99,235,0.3)] transition-all duration-500 flex flex-col h-full text-sm shadow-xl"
                 >
-                  <div className="relative h-40 shrink-0 bg-bg-base overflow-hidden">
+                  <div className="relative h-44 shrink-0 bg-bg-base overflow-hidden">
                     {turf.images && turf.images[0] ? (
-                      <img src={turf.images[0]} alt={turf.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img src={turf.images[0]} alt={turf.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                     ) : (
-                      <img src="https://images.unsplash.com/photo-1518605368461-1e1e38ce7058?auto=format&fit=crop&q=80&w=800" alt="Placeholder" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-60" />
+                      <img src="https://images.unsplash.com/photo-1518605368461-1e1e38ce7058?auto=format&fit=crop&q=80&w=800" alt="Placeholder" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-60" />
                     )}
-                    <div className="absolute top-2 left-2 bg-bg-base/80 backdrop-blur text-text-base px-2 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-lg">
+                    <div className="absolute top-3 left-3 bg-bg-base/80 backdrop-blur-md text-text-base px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg border border-white/10 group-hover:scale-105 transition-transform">
                       <FiStar className="text-yellow-400 fill-yellow-400" /> 4.8
                     </div>
                   </div>
                   
-                  <div className="p-4 flex flex-col flex-1">
+                  <div className="p-5 flex flex-col flex-1">
                     <div className="flex justify-between items-start mb-2 gap-2">
-                      <h3 className="text-lg font-bold text-text-base group-hover:text-primary transition-colors line-clamp-1">{turf.name}</h3>
-                      <p className="text-lg font-bold text-text-base whitespace-nowrap">₹{turf.pricePerHour}<span className="text-xs font-normal text-text-muted">/hr</span></p>
+                      <h3 className="text-lg font-bold text-text-base group-hover:text-primary-light transition-colors line-clamp-1">{turf.name}</h3>
+                      <p className="text-lg font-bold text-primary-light whitespace-nowrap">₹{turf.pricePerHour}<span className="text-xs font-normal text-text-muted">/hr</span></p>
                     </div>
                     
                     <div className="flex flex-col gap-1 text-text-muted mb-3 text-xs">
                       <div className="flex items-center">
-                        <FiMapPin className="mr-1 text-primary shrink-0" /> 
+                        <FiMapPin className="mr-1 text-primary shrink-0 group-hover:scale-110 transition-transform" /> 
                         <span className="line-clamp-1">{turf.location?.city ? `${turf.location.address}, ${turf.location.city}` : 'Location unverified'}</span>
                       </div>
                       <div className="flex items-center">
@@ -166,18 +209,18 @@ const SearchTurf = () => {
                     
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {turf.sports && turf.sports.length > 0 ? turf.sports.map(sport => (
-                        <span key={sport} className="bg-bg-base/50 border border-border-base text-[10px] px-2 py-0.5 rounded-md text-text-muted">
+                        <span key={sport} className="bg-bg-base/60 border border-border-base text-[10px] px-2.5 py-0.5 rounded-full text-text-muted group-hover:border-primary/40 transition-colors">
                           {sport}
                         </span>
                       )) : (
-                        <span className="bg-bg-base/50 border border-border-base text-[10px] px-2 py-0.5 rounded-md text-text-muted flex items-center gap-1"><FiCheck /> Multi-sport</span>
+                        <span className="bg-bg-base/60 border border-border-base text-[10px] px-2.5 py-0.5 rounded-full text-text-muted flex items-center gap-1"><FiCheck /> Multi-sport</span>
                       )}
                     </div>
 
                     <Link 
                       to={isAuthenticated ? `/turfs/${turf._id}` : '/login'} 
                       state={!isAuthenticated ? { from: `/turfs/${turf._id}` } : null}
-                      className="block w-full py-2 text-center rounded-lg bg-bg-base/50 hover:bg-primary hover:text-white text-text-base font-semibold transition-all duration-300 border border-border-base hover:border-primary mt-auto text-sm shadow-md"
+                      className="block w-full py-2.5 text-center rounded-xl bg-bg-base/60 hover:bg-primary hover:text-white text-text-base font-bold transition-all duration-300 border border-border-base hover:border-primary hover:shadow-[0_0_20px_rgba(37,99,235,0.5)] mt-auto text-sm shadow-md hover:-translate-y-0.5"
                     >
                       Book Now
                     </Link>
