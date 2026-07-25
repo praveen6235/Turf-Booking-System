@@ -1,14 +1,15 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../features/auth/authSlice';
-import { FiLogOut, FiUser, FiMoreVertical } from 'react-icons/fi';
+import { FiLogOut, FiUser, FiMoreVertical, FiZap } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
@@ -16,33 +17,52 @@ const Navbar = () => {
     navigate('/');
   };
 
+  const isActive = (path) => location.pathname === path;
+
   return (
-    <nav className="fixed w-full z-50 bg-bg-surface/80 backdrop-blur-md border-b border-border-base transition-all duration-300">
+    <nav className="fixed w-full z-50 bg-bg-surface/85 backdrop-blur-xl border-b border-border-base/70 shadow-lg shadow-black/20 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
+          {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <Link to="/" className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-light">
-              TurfBook
+            <Link to="/" className="flex items-center gap-2 group">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#748D87] via-[#85A886] to-[#94B495] flex items-center justify-center text-[#111720] shadow-lg shadow-[#94B495]/30 group-hover:scale-110 group-hover:shadow-[#94B495]/50 transition-all duration-300">
+                <FiZap className="text-xl text-[#111720] fill-[#111720]" />
+              </div>
+              <span className="text-2xl font-extrabold text-white font-heading tracking-tight group-hover:text-[#94B495] transition-colors">
+                Turf<span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F5E1C3] via-[#94B495] to-[#B2D8B3]">Book</span>
+              </span>
             </Link>
           </div>
           
+          {/* Desktop Links */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-text-muted hover:text-text-base font-medium transition-colors">Home</Link>
-            <Link to="/search" className="text-text-muted hover:text-text-base font-medium transition-colors">Find Turfs</Link>
+            <Link 
+              to="/" 
+              className={`font-semibold text-base sm:text-lg transition-all duration-300 ${isActive('/') ? 'text-[#94B495] font-bold' : 'text-slate-200 hover:text-white'}`}
+            >
+              Home
+            </Link>
+            <Link 
+              to="/search" 
+              className={`font-semibold text-base sm:text-lg transition-all duration-300 ${isActive('/search') ? 'text-[#94B495] font-bold' : 'text-slate-200 hover:text-white'}`}
+            >
+              Find Turfs
+            </Link>
             
             {isAuthenticated ? (
-              <div className="flex items-center space-x-6">
-                <Link to="/dashboard" className="flex items-center bg-bg-base/50 hover:bg-bg-surface px-4 py-2.5 rounded-full border border-border-base text-text-base font-medium transition-all shadow-lg shadow-black/5">
-                  <FiUser className="mr-2 text-primary" /> Dashboard
+              <div className="flex items-center space-x-5">
+                <Link to="/dashboard" className="flex items-center bg-bg-base/70 hover:bg-bg-surface px-5 py-2.5 rounded-full border border-border-base text-white text-base font-semibold transition-all shadow-md hover:border-primary">
+                  <FiUser className="mr-2 text-primary text-lg" /> Dashboard
                 </Link>
-                <button onClick={handleLogout} className="flex items-center text-red-500 hover:text-red-400 font-medium transition-colors">
-                  <FiLogOut className="mr-2" /> Logout
+                <button onClick={handleLogout} className="flex items-center text-red-400 hover:text-red-300 font-semibold text-base transition-colors cursor-pointer">
+                  <FiLogOut className="mr-2 text-lg" /> Logout
                 </button>
               </div>
             ) : (
               <div className="flex items-center space-x-6">
-                <Link to="/login" className="text-text-muted hover:text-text-base font-medium transition-colors">Log in</Link>
-                <Link to="/signup" className="btn-primary px-6 py-2 rounded-full font-bold shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all hover:-translate-y-0.5">Sign up</Link>
+                <Link to="/login" className="text-slate-200 hover:text-white font-semibold text-base sm:text-lg transition-colors">Log in</Link>
+                <Link to="/signup" className="btn-primary px-7 py-2.5 rounded-full font-bold text-base shadow-lg shadow-[#94B495]/30 hover:shadow-[#94B495]/50 transition-all hover:-translate-y-0.5">Sign up</Link>
               </div>
             )}
           </div>
