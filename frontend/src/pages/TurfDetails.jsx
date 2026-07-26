@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTurfDetails } from '../features/turfs/turfSlice';
 import { createBookingOrder } from '../features/bookings/bookingSlice';
+import { fetchTurfReviews } from '../features/reviews/reviewSlice';
 import { logout } from '../features/auth/authSlice';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { FiShield, FiLock, FiCheckCircle } from 'react-icons/fi';
-import { SiRazorpay } from 'react-icons/si';
+import { FiShield, FiLock, FiCheckCircle, FiStar, FiUser, FiMessageSquare, FiMapPin } from 'react-icons/fi';
 
 const TurfDetails = () => {
   const { id } = useParams();
@@ -15,6 +15,7 @@ const TurfDetails = () => {
   const navigate = useNavigate();
   
   const { currentTurf, loading } = useSelector((state) => state.turfs);
+  const { turfReviews, loading: reviewsLoading } = useSelector((state) => state.reviews);
   const { isAuthenticated, user } = useSelector((state) => state.auth);
 
   const dateObj = new Date();
@@ -43,6 +44,7 @@ const TurfDetails = () => {
 
   useEffect(() => {
     dispatch(fetchTurfDetails(id));
+    dispatch(fetchTurfReviews(id));
   }, [dispatch, id]);
 
   // Fetch already booked slots for this turf on the selected date
@@ -220,8 +222,13 @@ const TurfDetails = () => {
   };
 
   if (loading || !currentTurf) {
-    return <div className="text-center py-20 text-xl text-primary">Loading Details...</div>;
+    return <div className="text-center py-20 text-xl text-primary font-medium">Loading Details...</div>;
   }
+
+  const ratingCount = currentTurf.ratingsQuantity !== undefined ? currentTurf.ratingsQuantity : turfReviews.length;
+  const avgRating = ratingCount > 0 
+    ? (currentTurf.ratingsAverage ? currentTurf.ratingsAverage : (turfReviews.length ? (turfReviews.reduce((acc, item) => acc + item.rating, 0) / turfReviews.length).toFixed(1) : 0))
+    : 0;
 
   return (
     <div className="w-full flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col">
@@ -230,18 +237,30 @@ const TurfDetails = () => {
         animate={{ opacity: 1, y: 0 }}
         className="grid grid-cols-1 lg:grid-cols-3 gap-12"
       >
-        {/* Left Col: Images & Details */}
-        <div className="lg:col-span-2 space-y-8">
+        {/* Left Col: Images & Details & Reviews */}
+        <div className="lg:col-span-2 space-y-10">
           <div className="space-y-4">
-            <div className="h-[400px] w-full rounded-2xl overflow-hidden bg-gray-800 shadow-2xl">
+            <div className="h-[400px] w-full rounded-2xl overflow-hidden bg-gray-800 shadow-2xl relative">
               {currentTurf.images && currentTurf.images[0] ? (
                 <img src={currentTurf.images[0]} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" alt={currentTurf.name} />
               ) : (
                 <img src="https://images.unsplash.com/photo-1518605368461-1e1e38ce7058?auto=format&fit=crop&q=80&w=1200" className="w-full h-full object-cover" alt="Turf placeholder" />
               )}
+              {/* Rating Badge Overlay */}
+              <div className="absolute top-4 left-4 bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-full text-white font-bold text-sm flex items-center gap-1.5 border border-white/10 shadow-xl">
+                <FiStar className="text-yellow-400 fill-yellow-400" />
+                {ratingCount > 0 ? (
+                  <>
+                    <span>{avgRating}</span>
+                    <span className="text-xs text-gray-400 font-normal">({ratingCount} {ratingCount === 1 ? 'review' : 'reviews'})</span>
+                  </>
+                ) : (
+                  <span className="text-xs text-gray-300 font-medium">New (0 reviews)</span>
+                )}
+              </div>
             </div>
             
-            {/* Turf Box Images / Thumbnails */}
+            {/* Turf Box Thumbnails */}
             <div className="grid grid-cols-4 gap-4">
               {(currentTurf.images && currentTurf.images.length > 1 ? currentTurf.images.slice(1, 5) : [
                 "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?auto=format&fit=crop&q=80&w=400",
@@ -256,25 +275,101 @@ const TurfDetails = () => {
             </div>
           </div>
           
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-4">{currentTurf.name}</h1>
-            <p className="text-gray-400 text-lg leading-relaxed mb-8">{currentTurf.description}</p>
-            
-            <h3 className="text-2xl font-bold text-white mb-4">Amenities</h3>
-            <div className="flex flex-wrap gap-4">
-              {currentTurf.amenities && currentTurf.amenities.map(item => (
-                <span key={item} className="px-4 py-2 bg-bg-surface border border-border-base rounded-lg text-gray-300">
-                  {item}
-                </span>
-              ))}
-              {!currentTurf.amenities?.length && <p className="text-gray-500">No specific amenities listed.</p>}
+          <div className="space-y-6 border-b border-border-base pb-8">
+            <div>
+              <h1 className="text-4xl font-extrabold text-white mb-2 font-heading">{currentTurf.name}</h1>
+              {currentTurf.location?.address && (
+                <p className="text-text-muted text-sm flex items-center gap-1.5 mb-4">
+                  <FiMapPin className="text-primary" /> {currentTurf.location.address}, {currentTurf.location.city}
+                </p>
+              )}
+              <p className="text-gray-300 text-base leading-relaxed">{currentTurf.description}</p>
             </div>
+            
+            <div>
+              <h3 className="text-xl font-bold text-white mb-3 font-heading">Amenities</h3>
+              <div className="flex flex-wrap gap-3">
+                {currentTurf.amenities && currentTurf.amenities.map(item => (
+                  <span key={item} className="px-4 py-2 bg-bg-surface border border-border-base rounded-xl text-xs font-semibold text-gray-300 shadow-sm">
+                    {item}
+                  </span>
+                ))}
+                {!currentTurf.amenities?.length && <p className="text-gray-500 text-sm">No specific amenities listed.</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Customer Reviews Section */}
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-white font-heading flex items-center gap-2">
+                  <FiMessageSquare className="text-primary" /> Customer Reviews & Ratings
+                </h2>
+                <p className="text-xs text-text-muted mt-1">Real feedback from players who booked this turf</p>
+              </div>
+              <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 px-3.5 py-1.5 rounded-full text-yellow-400 text-sm font-bold">
+                <FiStar className="fill-yellow-400" />
+                {ratingCount > 0 ? (
+                  <span>{avgRating} / 5.0 ({ratingCount} {ratingCount === 1 ? 'review' : 'reviews'})</span>
+                ) : (
+                  <span>0 reviews yet</span>
+                )}
+              </div>
+            </div>
+
+            {reviewsLoading ? (
+              <p className="text-primary text-sm">Loading reviews...</p>
+            ) : turfReviews.length > 0 ? (
+              <div className="space-y-4">
+                {turfReviews.map((rev) => (
+                  <div 
+                    key={rev._id} 
+                    className="glass-card p-5 rounded-2xl border border-border-base flex flex-col space-y-3 shadow-md"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/40 text-primary-light flex items-center justify-center font-bold text-sm">
+                          {rev.userId?.name ? rev.userId.name.charAt(0).toUpperCase() : <FiUser />}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-white">{rev.userId?.name || 'Verified Player'}</h4>
+                          <p className="text-[11px] text-text-muted">{new Date(rev.createdAt).toDateString()}</p>
+                        </div>
+                      </div>
+
+                      {/* Stars */}
+                      <div className="flex items-center gap-1 bg-yellow-500/10 border border-yellow-500/20 px-2.5 py-0.5 rounded-full text-yellow-400 text-xs font-bold">
+                        <FiStar className="fill-yellow-400" />
+                        <span>{rev.rating}.0</span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-300 italic leading-relaxed pl-12">
+                      "{rev.review}"
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center border border-dashed border-border-base rounded-2xl bg-bg-surface/30">
+                <p className="text-text-muted text-sm mb-2">No reviews written yet for this turf.</p>
+                {isAuthenticated && (
+                  <button 
+                    onClick={() => navigate('/dashboard')} 
+                    className="text-xs text-primary-light font-semibold hover:underline"
+                  >
+                    Book a slot and be the first to leave a review from your Dashboard!
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Right Col: Booking Card (Sticky) */}
         <div className="lg:col-span-1">
-          <div className="glass-card p-6 sticky bottom-4 lg:top-24 z-40 border-t-2 lg:border-t border-primary/20 lg:border-border-base shadow-2xl">
+          <div className="glass-card p-6 sticky bottom-4 lg:top-24 z-40 border-t-2 lg:border-t border-primary/20 lg:border-border-base shadow-2xl rounded-2xl">
             <h3 className="text-2xl font-bold text-white mb-2">Book Slot</h3>
             <p className="text-4xl font-bold text-primary mb-6">₹{currentTurf.pricePerHour}<span className="text-lg text-gray-400 font-normal">/hour</span></p>
             
@@ -349,7 +444,7 @@ const TurfDetails = () => {
             <button 
               disabled={isProcessing}
               onClick={handleBookingSubmit} 
-              className="btn-primary w-full py-4 text-lg shadow-primary/40 flex items-center justify-center gap-2"
+              className="btn-primary w-full py-4 text-lg shadow-primary/40 flex items-center justify-center gap-2 cursor-pointer"
             >
               {isProcessing ? (
                 <span className="flex items-center gap-2">
@@ -363,7 +458,7 @@ const TurfDetails = () => {
               )}
             </button>
 
-            {/* Instant Confirmation & SSL Trust Footer */}
+            {/* Trust Footer */}
             <div className="mt-4 pt-3 border-t border-border-base flex items-center justify-center gap-3 text-xs text-text-muted">
               <div className="flex items-center gap-1">
                 <FiShield className="text-primary" />

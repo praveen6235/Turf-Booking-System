@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Review = require('../models/Review');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
@@ -6,7 +7,21 @@ exports.getAllReviews = catchAsync(async (req, res, next) => {
   let filter = {};
   if (req.params.turfId) filter = { turfId: req.params.turfId };
 
-  const reviews = await Review.find(filter);
+  const reviews = await Review.find(filter).sort('-createdAt');
+
+  res.status(200).json({
+    status: 'success',
+    results: reviews.length,
+    data: {
+      reviews
+    }
+  });
+});
+
+exports.getMyReviews = catchAsync(async (req, res, next) => {
+  const reviews = await Review.find({ userId: req.user.id })
+    .populate('turfId', 'name location images')
+    .sort('-createdAt');
 
   res.status(200).json({
     status: 'success',
@@ -19,15 +34,59 @@ exports.getAllReviews = catchAsync(async (req, res, next) => {
 
 exports.createReview = catchAsync(async (req, res, next) => {
   // Allow nested routes
-  if (!req.body.turfId) req.body.turfId = req.params.turfId;
-  if (!req.body.userId) req.body.userId = req.user.id;
+  const turfId = req.body.turfId || req.params.turfId;
+  const userId = req.user.id;
 
-  const newReview = await Review.create(req.body);
+  if (!turfId) {
+    return next(new AppError('Review must belong to a turf.', 400));
+  }
 
-  res.status(201).json({
+  const turfObjId = mongoose.Types.ObjectId.isValid(turfId) ? new mongoose.Types.ObjectId(turfId) : turfId;
+  const userObjId = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId;
+
+  // Atomic upsert: create if new, or update if user already reviewed this turf
+  const review = await Review.findOneAndUpdate(
+    { turfId: turfObjId, userId: userObjId },
+    {
+      turfId: turfObjId,
+      userId: userObjId,
+      rating: req.body.rating,
+      review: req.body.review
+    },
+    {
+      new: true,
+      upsert: true,
+      runValidators: true,
+      setDefaultsOnInsert: true
+    }
+  ).populate('userId', 'name avatar').populate('turfId', 'name location images');
+
+  // Recalculate turf ratings
+  await Review.calcAverageRatings(turfObjId);
+
+  res.status(200).json({
     status: 'success',
     data: {
-      review: newReview
+      review
     }
+  });
+});
+
+exports.deleteReview = catchAsync(async (req, res, next) => {
+  const review = await Review.findOneAndDelete({
+    _id: req.params.id,
+    $or: [{ userId: req.user.id }, { role: 'Admin' }]
+  });
+
+  if (!review) {
+    return next(new AppError('No review found with that ID or you do not have permission to delete it', 404));
+  }
+
+  // Trigger recalculation of ratings on turf
+  await Review.calcAverageRatings(review.turfId);
+
+  res.status(204).json({
+    status: 'success',
+    data: null
   });
 });
