@@ -186,7 +186,17 @@ const SearchTurf = () => {
                       <img src="https://images.unsplash.com/photo-1518605368461-1e1e38ce7058?auto=format&fit=crop&q=80&w=800" alt="Placeholder" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-60" />
                     )}
                     <div className="absolute top-3 left-3 bg-bg-base/80 backdrop-blur-md text-text-base px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg border border-white/10 group-hover:scale-105 transition-transform">
-                      <FiStar className="text-yellow-400 fill-yellow-400" /> 4.8
+                      <FiStar className="text-yellow-400 fill-yellow-400" />
+                      {turf.ratingsQuantity > 0 ? (
+                        <>
+                          <span>{turf.ratingsAverage}</span>
+                          <span className="text-[10px] text-text-muted font-normal">
+                            ({turf.ratingsQuantity} {turf.ratingsQuantity === 1 ? 'review' : 'reviews'})
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-text-muted text-[11px] font-medium">New (0 reviews)</span>
+                      )}
                     </div>
                   </div>
                   

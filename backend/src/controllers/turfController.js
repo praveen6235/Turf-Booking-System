@@ -2,11 +2,14 @@ const Turf = require('../models/Turf');
 const APIFeatures = require('../utils/APIFeatures');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
+const syncAllTurfRatings = require('../utils/syncRatings');
 
 exports.getAllTurfs = catchAsync(async (req, res, next) => {
-  // Execute Query using APIFeatures
-  // Start with a base query that only shows approved turfs
-  const baseQuery = Turf.find({ isApproved: true });
+  // Sync ratings across all turfs
+  await syncAllTurfRatings();
+
+  // Execute Query using APIFeatures with populated virtual reviews
+  const baseQuery = Turf.find({ isApproved: true }).populate('reviews');
   
   const features = new APIFeatures(baseQuery, req.query)
     .filter()
@@ -16,26 +19,53 @@ exports.getAllTurfs = catchAsync(async (req, res, next) => {
     
   const turfs = await features.query;
 
+  // Compute live rating score & count dynamically for every turf
+  const updatedTurfs = turfs.map(t => {
+    const turfObj = t.toObject ? t.toObject() : t;
+    const revs = turfObj.reviews || [];
+    const count = revs.length || turfObj.ratingsQuantity || 0;
+    const avg = count > 0 
+      ? (revs.length ? Math.round((revs.reduce((sum, r) => sum + r.rating, 0) / revs.length) * 10) / 10 : turfObj.ratingsAverage)
+      : 0;
+
+    return {
+      ...turfObj,
+      ratingsQuantity: count,
+      ratingsAverage: avg
+    };
+  });
+
   res.status(200).json({
     status: 'success',
-    results: turfs.length,
+    results: updatedTurfs.length,
     data: {
-      turfs
+      turfs: updatedTurfs
     }
   });
 });
 
 exports.getTurf = catchAsync(async (req, res, next) => {
-  const turf = await Turf.findById(req.params.id);
+  const turf = await Turf.findById(req.params.id).populate('reviews');
 
   if (!turf) {
     return next(new AppError('No turf found with that ID', 404));
   }
 
+  const turfObj = turf.toObject ? turf.toObject() : turf;
+  const revs = turfObj.reviews || [];
+  const count = revs.length || turfObj.ratingsQuantity || 0;
+  const avg = count > 0 
+    ? (revs.length ? Math.round((revs.reduce((sum, r) => sum + r.rating, 0) / revs.length) * 10) / 10 : turfObj.ratingsAverage)
+    : 0;
+
   res.status(200).json({
     status: 'success',
     data: {
-      turf
+      turf: {
+        ...turfObj,
+        ratingsQuantity: count,
+        ratingsAverage: avg
+      }
     }
   });
 });

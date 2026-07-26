@@ -31,12 +31,54 @@ const reviewSchema = new mongoose.Schema({
 reviewSchema.index({ turfId: 1, userId: 1 }, { unique: true });
 
 // Auto-populate user details when querying reviews
-reviewSchema.pre(/^find/, function(next) {
+reviewSchema.pre(/^find/, function() {
   this.populate({
     path: 'userId',
-    select: 'name avatar' // Assuming we add avatar later
+    select: 'name avatar'
   });
-  next();
+});
+
+// Static method to calculate average ratings on Turf
+reviewSchema.statics.calcAverageRatings = async function(turfId) {
+  if (!turfId) return;
+  const idStr = turfId.toString();
+  const objId = mongoose.Types.ObjectId.isValid(idStr) ? new mongoose.Types.ObjectId(idStr) : idStr;
+
+  const stats = await this.aggregate([
+    {
+      $match: { turfId: { $in: [objId, idStr] } }
+    },
+    {
+      $group: {
+        _id: null,
+        nRating: { $sum: 1 },
+        avgRating: { $avg: '$rating' }
+      }
+    }
+  ]);
+
+  if (stats.length > 0) {
+    await mongoose.model('Turf').findByIdAndUpdate(turfId, {
+      ratingsQuantity: stats[0].nRating,
+      ratingsAverage: Math.round(stats[0].avgRating * 10) / 10
+    });
+  } else {
+    await mongoose.model('Turf').findByIdAndUpdate(turfId, {
+      ratingsQuantity: 0,
+      ratingsAverage: 0
+    });
+  }
+};
+
+reviewSchema.post('save', function() {
+  // this points to current review
+  this.constructor.calcAverageRatings(this.turfId);
+});
+
+reviewSchema.post(/^findOneAnd/, async function(doc) {
+  if (doc) {
+    await doc.constructor.calcAverageRatings(doc.turfId);
+  }
 });
 
 const Review = mongoose.model('Review', reviewSchema);

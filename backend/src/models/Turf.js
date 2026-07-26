@@ -33,8 +33,26 @@ const turfSchema = new mongoose.Schema({
   isApproved: {
     type: Boolean,
     default: false // Admin must approve before it goes live
+  },
+  ratingsAverage: {
+    type: Number,
+    default: 0,
+    min: [0, 'Rating must be above or equal to 0'],
+    max: [5, 'Rating must be below or equal to 5.0'],
+    set: val => Math.round(val * 10) / 10
+  },
+  ratingsQuantity: {
+    type: Number,
+    default: 0
   }
-}, { timestamps: true });
+}, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
+
+// Virtual populate for reviews
+turfSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'turfId',
+  localField: '_id'
+});
 
 const Turf = mongoose.model('Turf', turfSchema);
 module.exports = Turf;
