@@ -14,6 +14,12 @@ const razorpay = new Razorpay({
 exports.createBooking = catchAsync(async (req, res, next) => {
   const { turfId, date, startTime, endTime, contactNumber } = req.body;
 
+  // 0. Validate Indian mobile number format
+  const indianMobileRegex = /^(\+91[\-\s]?|91|0)?[6-9]\d{9}$/;
+  if (!contactNumber || !indianMobileRegex.test(contactNumber.trim())) {
+    return next(new AppError('Please provide a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9', 400));
+  }
+
   // 1. Check if turf exists
   const turf = await Turf.findById(turfId);
   if (!turf) {
