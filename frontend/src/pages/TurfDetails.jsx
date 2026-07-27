@@ -93,8 +93,9 @@ const TurfDetails = () => {
       return;
     }
 
-    if (!contactNumber || contactNumber.length < 10) {
-      toast.error('Please provide a valid 10-digit contact number');
+    const indianMobileRegex = /^(\+91[\-\s]?|91|0)?[6-9]\d{9}$/;
+    if (!contactNumber || !indianMobileRegex.test(contactNumber.trim())) {
+      toast.error('Please enter a valid Indian mobile number starting with 6, 7, 8, or 9');
       return;
     }
 
@@ -420,11 +421,12 @@ const TurfDetails = () => {
                 <label className="block text-sm text-gray-400 mb-1">Contact Number</label>
                 <input 
                   type="tel" 
-                  placeholder="Enter 10-digit mobile number"
+                  placeholder="e.g. 9876543210"
                   value={contactNumber}
                   onChange={(e) => setContactNumber(e.target.value)}
                   className="input-field w-full" 
                 />
+                <p className="text-[11px] text-text-muted mt-1">Must be a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9</p>
               </div>
 
               <div className="flex items-start gap-3 mt-4">
