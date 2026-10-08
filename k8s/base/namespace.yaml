@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: turf-booking-system
+  labels:
+    name: turf-booking-system
+    app.kubernetes.io/part-of: turf-booking-system
