@@ -1,0 +1,71 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: turf-booking-alerts
+  namespace: turf-booking-system
+  labels:
+    role: alert-rules
+    app.kubernetes.io/part-of: turf-booking-system
+spec:
+  groups:
+  - name: turf-booking-alerts.rules
+    rules:
+    # 1. Error Rate > 5% for 5m
+    - alert: HighErrorRate
+      expr: (sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 5
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High HTTP 5xx error rate detected (> 5%)"
+        description: "HTTP 5xx error rate for service {{ $labels.service }} is above 5% over 5m."
+
+    # 2. P95 Latency > 1s
+    - alert: HighLatencyP95
+      expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 1.0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "P95 Latency exceeds 1 second"
+        description: "Service {{ $labels.service }} p95 response time is {{ $value }}s (> 1.0s)."
+
+    # 3. Pod Crash-Looping
+    - alert: PodCrashLooping
+      expr: rate(kube_pod_container_status_restarts_total[5m]) * 60 > 2
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Pod crash-looping detected"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is restarting frequently."
+
+    # 4. HPA at maxReplicas for 10m
+    - alert: HPAMaxedOut
+      expr: kube_horizontalpodautoscaler_status_current_replicas == kube_horizontalpodautoscaler_spec_max_replicas
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "HPA at max replicas capacity"
+        description: "HPA {{ $labels.horizontalpodautoscaler }} has been running at maxReplicas for 10 minutes."
+
+    # 5. Booking Failure Spike
+    - alert: BookingFailureSpike
+      expr: sum(rate(booking_failures_total[5m])) > 5
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Spike in booking failures"
+        description: "Booking failure rate is currently {{ $value }} failures/min."
+
+    # 6. Service Down
+    - alert: MicroserviceDown
+      expr: up{job=~"auth-service|turf-service|booking-service|api-gateway|frontend-service"} == 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Microservice down"
+        description: "Microservice instance {{ $labels.instance }} is unreachable."

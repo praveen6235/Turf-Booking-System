@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: turf-services-monitor
+  namespace: turf-booking-system
+  labels:
+    release: prometheus-stack
+    app.kubernetes.io/part-of: turf-booking-system
+spec:
+  selector:
+    matchExpressions:
+    - key: app
+      operator: In
+      values: [auth-service, turf-service, booking-service, api-gateway, frontend-service]
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
+    scrapeTimeout: 10s

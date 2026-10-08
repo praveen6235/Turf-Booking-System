@@ -1,7 +1,9 @@
 const client = require('prom-client');
+const mongoose = require('mongoose');
 
 client.collectDefaultMetrics({ prefix: 'turf_booking_' });
 
+// 1. RED Metrics
 const httpRequestsTotal = new client.Counter({
   name: 'http_requests_total',
   help: 'Total number of HTTP requests',
@@ -15,6 +17,7 @@ const httpRequestDurationSeconds = new client.Histogram({
   buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
 });
 
+// 2. Business Metrics
 const turfBookingsCreatedTotal = new client.Counter({
   name: 'turf_bookings_created_total',
   help: 'Total number of bookings successfully created',
@@ -31,6 +34,25 @@ const bookingConflictsTotal = new client.Counter({
   name: 'booking_conflicts_total',
   help: 'Total number of double-booking slot conflicts prevented'
 });
+
+// 3. Dependency Metrics
+const mongodbOperationDurationSeconds = new client.Histogram({
+  name: 'mongodb_operation_duration_seconds',
+  help: 'Duration of MongoDB operations in seconds',
+  labelNames: ['service', 'operation', 'collection'],
+  buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1]
+});
+
+const mongodbConnectionState = new client.Gauge({
+  name: 'mongodb_connection_state',
+  help: 'State of MongoDB connection (1 = connected, 0 = disconnected)',
+  labelNames: ['service']
+});
+
+setInterval(() => {
+  const isConnected = mongoose.connection.readyState === 1 ? 1 : 0;
+  mongodbConnectionState.set({ service: 'booking-service' }, isConnected);
+}, 10000);
 
 const metricsMiddleware = (serviceName) => {
   return (req, res, next) => {
@@ -63,6 +85,8 @@ module.exports = {
   turfBookingsCreatedTotal,
   bookingFailuresTotal,
   bookingConflictsTotal,
+  mongodbOperationDurationSeconds,
+  mongodbConnectionState,
   metricsMiddleware,
   getMetricsHandler
 };
