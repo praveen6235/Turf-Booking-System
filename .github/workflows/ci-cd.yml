@@ -1,0 +1,145 @@
+name: Turf Booking System CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  lint-and-test:
+    name: Lint & Test Microservices
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Test Auth Service
+        run: |
+          cd services/auth-service
+          npm ci
+          npm test
+
+      - name: Test Turf Service
+        run: |
+          cd services/turf-service
+          npm ci
+          npm test
+
+      - name: Test Booking Service
+        run: |
+          cd services/booking-service
+          npm ci
+          npm test
+
+  detect-changes:
+    name: Detect Changed Services
+    runs-on: ubuntu-latest
+    outputs:
+      auth: ${{ steps.filter.outputs.auth }}
+      turf: ${{ steps.filter.outputs.turf }}
+      booking: ${{ steps.filter.outputs.booking }}
+      gateway: ${{ steps.filter.outputs.gateway }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      webhook: ${{ steps.filter.outputs.webhook }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            auth:
+              - 'services/auth-service/**'
+            turf:
+              - 'services/turf-service/**'
+            booking:
+              - 'services/booking-service/**'
+            gateway:
+              - 'services/api-gateway/**'
+            frontend:
+              - 'services/frontend-service/**'
+            webhook:
+              - 'services/webhook-service/**'
+
+  build-and-deploy:
+    name: Build, Security Scan & Deploy
+    needs: [lint-and-test, detect-changes]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/TurfGitHubActionsRole
+          aws-region: ap-south-1
+          role-session-name: GitHubActionsCI
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Build & Push Auth Service if changed
+      - name: Build & Push Auth Service
+        if: needs.detect-changes.outputs.auth == 'true'
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/turf-booking/auth-service:${{ github.sha }} ./services/auth-service
+          docker tag ${{ steps.login-ecr.outputs.registry }}/turf-booking/auth-service:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/turf-booking/auth-service:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/turf-booking/auth-service:${{ github.sha }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/turf-booking/auth-service:latest
+
+      # Build & Push Turf Service if changed
+      - name: Build & Push Turf Service
+        if: needs.detect-changes.outputs.turf == 'true'
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/turf-booking/turf-service:${{ github.sha }} ./services/turf-service
+          docker tag ${{ steps.login-ecr.outputs.registry }}/turf-booking/turf-service:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/turf-booking/turf-service:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/turf-booking/turf-service:${{ github.sha }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/turf-booking/turf-service:latest
+
+      # Build & Push Booking Service if changed
+      - name: Build & Push Booking Service
+        if: needs.detect-changes.outputs.booking == 'true'
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/turf-booking/booking-service:${{ github.sha }} ./services/booking-service
+          docker tag ${{ steps.login-ecr.outputs.registry }}/turf-booking/booking-service:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/turf-booking/booking-service:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/turf-booking/booking-service:${{ github.sha }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/turf-booking/booking-service:latest
+
+      # Security Vulnerability Scan with Trivy
+      - name: Run Trivy Security Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ steps.login-ecr.outputs.registry }}/turf-booking/auth-service:${{ github.sha }}'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+      # Deploy to Kubernetes
+      - name: Deploy to Kubernetes Cluster
+        run: |
+          kubectl apply -k k8s/base
+          kubectl rollout status deployment/auth-service -n turf-booking-system --timeout=120s
+          kubectl rollout status deployment/turf-service -n turf-booking-system --timeout=120s
+          kubectl rollout status deployment/booking-service -n turf-booking-system --timeout=120s
+
+      # Notify Webhook Service for Grafana Deployment Annotation
+      - name: Post Deploy Annotation to Webhook Service
+        run: |
+          curl -X POST "${{ secrets.WEBHOOK_SERVICE_URL }}/webhook/github" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: push" \
+            -d "{\"ref\":\"refs/heads/main\",\"after\":\"${{ github.sha }}\"}" || true
