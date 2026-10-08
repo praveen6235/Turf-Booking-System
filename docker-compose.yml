@@ -1,0 +1,161 @@
+networks:
+  turf-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+
+services:
+  # Local MongoDB Database Container
+  mongodb:
+    image: mongo:7.0
+    container_name: turf-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - turf-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 1. Auth Microservice (Port 5001)
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    image: ${ECR_REGISTRY:-turf-booking}/auth-service:${GIT_SHA:-latest}
+    container_name: turf-auth-service
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=5001
+      - MONGODB_URI=${AUTH_MONGO_URI:-mongodb://mongodb:27017/turf_auth}
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_for_turf_booking_system_2026}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-90d}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+    networks:
+      - turf-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:5001/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # 2. Turf & Review Microservice (Port 5002)
+  turf-service:
+    build:
+      context: ./services/turf-service
+      dockerfile: Dockerfile
+    image: ${ECR_REGISTRY:-turf-booking}/turf-service:${GIT_SHA:-latest}
+    container_name: turf-turf-service
+    ports:
+      - "5002:5002"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=5002
+      - MONGODB_URI=${TURF_MONGO_URI:-mongodb://mongodb:27017/turf_turf}
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_for_turf_booking_system_2026}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
+    networks:
+      - turf-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:5002/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # 3. Booking Microservice (Port 5003)
+  booking-service:
+    build:
+      context: ./services/booking-service
+      dockerfile: Dockerfile
+    image: ${ECR_REGISTRY:-turf-booking}/booking-service:${GIT_SHA:-latest}
+    container_name: turf-booking-service
+    ports:
+      - "5003:5003"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=5003
+      - MONGODB_URI=${BOOKING_MONGO_URI:-mongodb://mongodb:27017/turf_booking}
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_for_turf_booking_system_2026}
+      - TURF_SERVICE_URL=http://turf-service:5002
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_123456789}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-dummy_secret}
+    networks:
+      - turf-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      turf-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:5003/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # 4. API Gateway (Port 5000)
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    image: ${ECR_REGISTRY:-turf-booking}/api-gateway:${GIT_SHA:-latest}
+    container_name: turf-api-gateway
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=5000
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:80}
+      - AUTH_SERVICE_URL=http://auth-service:5001
+      - TURF_SERVICE_URL=http://turf-service:5002
+      - BOOKING_SERVICE_URL=http://booking-service:5003
+    networks:
+      - turf-network
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      turf-service:
+        condition: service_healthy
+      booking-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:5000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # 5. Frontend SPA (Port 80)
+  frontend-service:
+    build:
+      context: ./services/frontend-service
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:5000/api/v1}
+    image: ${ECR_REGISTRY:-turf-booking}/frontend-service:${GIT_SHA:-latest}
+    container_name: turf-frontend-service
+    ports:
+      - "80:80"
+    networks:
+      - turf-network
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:80/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
