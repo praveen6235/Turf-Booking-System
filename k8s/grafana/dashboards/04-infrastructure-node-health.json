@@ -1,0 +1,47 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "title": "Node.js Event Loop Lag (seconds)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "nodejs_eventloop_lag_seconds",
+          "legendFormat": "{{service}}"
+        }
+      ]
+    },
+    {
+      "title": "MongoDB Connection Health State",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "mongodb_connection_state",
+          "legendFormat": "{{service}} DB State"
+        }
+      ]
+    },
+    {
+      "title": "Pod Container Restarts",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(changes(kube_pod_container_status_restarts_total[1h])) by (pod)",
+          "legendFormat": "{{pod}} Restarts"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["infrastructure", "node", "health"],
+  "time": { "from": "now-15m", "to": "now" },
+  "title": "04 - Infrastructure & Node Health"
+}

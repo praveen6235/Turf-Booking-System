@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: turf-booking-system
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:10.4.0
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: "admin"
+        - name: GF_USERS_ALLOW_SIGN_UP
+          value: "false"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: datasources
+          mountPath: /etc/grafana/provisioning/datasources
+        - name: dashboard-provider
+          mountPath: /etc/grafana/provisioning/dashboards
+        - name: dashboard-01
+          mountPath: /var/lib/grafana/dashboards/01-service-overview-red.json
+          subPath: 01-service-overview-red.json
+        - name: dashboard-02
+          mountPath: /var/lib/grafana/dashboards/02-booking-business.json
+          subPath: 02-booking-business.json
+        - name: dashboard-03
+          mountPath: /var/lib/grafana/dashboards/03-k8s-scaling.json
+          subPath: 03-k8s-scaling.json
+        - name: dashboard-04
+          mountPath: /var/lib/grafana/dashboards/04-infrastructure-node-health.json
+          subPath: 04-infrastructure-node-health.json
+        - name: dashboard-05
+          mountPath: /var/lib/grafana/dashboards/05-deployments-annotations.json
+          subPath: 05-deployments-annotations.json
+      volumes:
+      - name: datasources
+        configMap:
+          name: grafana-datasources
+      - name: dashboard-provider
+        configMap:
+          name: grafana-dashboard-provider
+      - name: dashboard-01
+        configMap:
+          name: grafana-dashboard-01
+      - name: dashboard-02
+        configMap:
+          name: grafana-dashboard-02
+      - name: dashboard-03
+        configMap:
+          name: grafana-dashboard-03
+      - name: dashboard-04
+        configMap:
+          name: grafana-dashboard-04
+      - name: dashboard-05
+        configMap:
+          name: grafana-dashboard-05
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: turf-booking-system
+spec:
+  ports:
+  - port: 3000
+    targetPort: 3000
+  selector:
+    app: grafana

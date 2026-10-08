@@ -1,0 +1,98 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": "Prometheus",
+        "enable": true,
+        "iconColor": "#6600cc",
+        "name": "GitHub Deployments",
+        "expr": "github_deployment_events_total",
+        "step": "1m",
+        "tagKeys": "service,environment",
+        "textFormat": "Deployment: {{service}} ({{environment}})",
+        "titleFormat": "Deploy"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "Request Rate (RPS) per Service",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{service=~\"$service\"}[1m])) by (service)",
+          "legendFormat": "{{service}}"
+        }
+      ]
+    },
+    {
+      "title": "HTTP 5xx Error Rate (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "(sum(rate(http_requests_total{status=~\"5..\", service=~\"$service\"}[1m])) by (service) / sum(rate(http_requests_total{service=~\"$service\"}[1m])) by (service)) * 100",
+          "legendFormat": "{{service}} Error %"
+        }
+      ]
+    },
+    {
+      "title": "Latency (p50 / p95 / p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service=~\"$service\"}[1m])) by (le, service))",
+          "legendFormat": "{{service}} p95"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{service=~\"$service\"}[1m])) by (le, service))",
+          "legendFormat": "{{service}} p50"
+        }
+      ]
+    },
+    {
+      "title": "Total Requests Processed",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(http_requests_total{service=~\"$service\"})",
+          "legendFormat": "Total Requests"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["red", "microservices"],
+  "templating": {
+    "list": [
+      {
+        "current": { "text": "All", "value": "$__all" },
+        "name": "service",
+        "query": "label_values(http_requests_total, service)",
+        "type": "query",
+        "includeAll": true
+      }
+    ]
+  },
+  "time": { "from": "now-15m", "to": "now" },
+  "title": "01 - Service Overview (RED per service)"
+}

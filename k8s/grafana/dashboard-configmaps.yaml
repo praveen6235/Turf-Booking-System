@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-01
+  namespace: turf-booking-system
+data:
+  01-service-overview-red.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "graphTooltip": 1,
+      "panels": [
+        {
+          "title": "Request Rate (RPS) per Service",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "targets": [{ "expr": "sum(rate(http_requests_total[1m])) by (service)", "legendFormat": "{{service}}" }]
+        },
+        {
+          "title": "HTTP 5xx Error Rate (%)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "targets": [{ "expr": "(sum(rate(http_requests_total{status=~\"5..\"}[1m])) by (service) / sum(rate(http_requests_total[1m])) by (service)) * 100", "legendFormat": "{{service}} Error %" }]
+        }
+      ],
+      "refresh": "5s",
+      "style": "dark",
+      "title": "01 - Service Overview (RED per service)"
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-02
+  namespace: turf-booking-system
+data:
+  02-booking-business.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "panels": [
+        {
+          "title": "Bookings Created per Minute",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "targets": [{ "expr": "sum(rate(turf_bookings_created_total[1m])) * 60", "legendFormat": "Bookings / min" }]
+        },
+        {
+          "title": "Slot Conflicts Prevented",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "targets": [{ "expr": "sum(booking_conflicts_total)", "legendFormat": "Conflicts Prevented" }]
+        }
+      ],
+      "refresh": "5s",
+      "style": "dark",
+      "title": "02 - Booking Business Dashboard"
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-03
+  namespace: turf-booking-system
+data:
+  03-k8s-scaling.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "panels": [
+        {
+          "title": "Incoming RPS vs Replicas",
+          "type": "timeseries",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+          "targets": [
+            { "expr": "sum(rate(http_requests_total[1m])) by (service)", "legendFormat": "RPS: {{service}}" },
+            { "expr": "kube_deployment_status_replicas{namespace=\"turf-booking-system\"}", "legendFormat": "Replicas: {{deployment}}" }
+          ]
+        }
+      ],
+      "refresh": "5s",
+      "style": "dark",
+      "title": "03 - Kubernetes Scaling Live"
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-04
+  namespace: turf-booking-system
+data:
+  04-infrastructure-node-health.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "panels": [
+        {
+          "title": "Event Loop Lag (s)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "targets": [{ "expr": "nodejs_eventloop_lag_seconds", "legendFormat": "{{service}}" }]
+        }
+      ],
+      "refresh": "5s",
+      "style": "dark",
+      "title": "04 - Infrastructure & Node Health"
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-05
+  namespace: turf-booking-system
+data:
+  05-deployments-annotations.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "panels": [
+        {
+          "title": "Deployments Annotations",
+          "type": "timeseries",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+          "targets": [{ "expr": "sum(rate(http_requests_total[1m])) by (service)", "legendFormat": "{{service}} RPS" }]
+        }
+      ],
+      "refresh": "5s",
+      "style": "dark",
+      "title": "05 - Deployments & Annotations"
+    }
