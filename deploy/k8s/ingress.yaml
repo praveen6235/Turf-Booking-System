@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turf-booking-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  rules:
+    - host: turfbooking.local
+      http:
+        paths:
+          - path: /api/v1/.*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 5000
+          - path: /.*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: client-service
+                port:
+                  number: 80

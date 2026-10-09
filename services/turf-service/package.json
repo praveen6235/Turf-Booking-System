@@ -9,7 +9,7 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
-    "cloudinary": "^2.2.0",
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

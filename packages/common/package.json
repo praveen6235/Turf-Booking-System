@@ -1,0 +1,12 @@
+{
+  "name": "@turf-booking/common",
+  "version": "1.0.0",
+  "description": "Shared utilities and middlewares for Turf Booking microservices",
+  "main": "index.js",
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "prom-client": "^15.1.3",
+    "winston": "^3.13.0"
+  },
+  "license": "ISC"
+}

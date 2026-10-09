@@ -119,6 +119,15 @@ jobs:
           docker push ${{ steps.login-ecr.outputs.registry }}/turf-booking/booking-service:${{ github.sha }}
           docker push ${{ steps.login-ecr.outputs.registry }}/turf-booking/booking-service:latest
 
+      # Build & Push Frontend Service if changed
+      - name: Build & Push Frontend Service
+        if: needs.detect-changes.outputs.frontend == 'true'
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/turf-booking/frontend-service:${{ github.sha }} ./services/frontend-service
+          docker tag ${{ steps.login-ecr.outputs.registry }}/turf-booking/frontend-service:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/turf-booking/frontend-service:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/turf-booking/frontend-service:${{ github.sha }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/turf-booking/frontend-service:latest
+
       # Security Vulnerability Scan with Trivy
       - name: Run Trivy Security Scan
         uses: aquasecurity/trivy-action@master
@@ -135,6 +144,7 @@ jobs:
           kubectl rollout status deployment/auth-service -n turf-booking-system --timeout=120s
           kubectl rollout status deployment/turf-service -n turf-booking-system --timeout=120s
           kubectl rollout status deployment/booking-service -n turf-booking-system --timeout=120s
+          kubectl rollout status deployment/frontend-service -n turf-booking-system --timeout=120s
 
       # Notify Webhook Service for Grafana Deployment Annotation
       - name: Post Deploy Annotation to Webhook Service

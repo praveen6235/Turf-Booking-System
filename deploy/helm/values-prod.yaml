@@ -1,0 +1,38 @@
+global:
+  environment: prod
+  domain: turfbooking.com
+
+apiGateway:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+authService:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 150m
+      memory: 192Mi
+
+userService:
+  replicaCount: 2
+
+turfService:
+  replicaCount: 3
+
+bookingService:
+  replicaCount: 4
+
+mediaService:
+  replicaCount: 2
+
+notificationService:
+  replicaCount: 2
+
+client:
+  replicaCount: 3

@@ -1,0 +1,111 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: api-gateway-monitor
+  namespace: default
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: api-gateway
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: auth-service-monitor
+  namespace: default
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: auth-service
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: user-service-monitor
+  namespace: default
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: user-service
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: turf-service-monitor
+  namespace: default
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: turf-service
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: booking-service-monitor
+  namespace: default
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: booking-service
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: media-service-monitor
+  namespace: default
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: media-service
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: notification-service-monitor
+  namespace: default
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: notification-service
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

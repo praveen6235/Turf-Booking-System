@@ -2,13 +2,10 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-COPY packages/common ./packages/common
-COPY services/media-service ./services/media-service
+COPY package*.json ./
+RUN npm ci --only=production
 
-RUN npm ci --workspace=packages/common --workspace=services/media-service --omit=dev
-
-# Stage 2: Production Minimal Image
+# Stage 2: Production Runner
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -16,10 +13,9 @@ ENV NODE_ENV=production
 USER node
 
 COPY --chown=node:node --from=builder /app/node_modules ./node_modules
-COPY --chown=node:node --from=builder /app/packages/common ./packages/common
-COPY --chown=node:node --from=builder /app/services/media-service ./services/media-service
-
-WORKDIR /app/services/media-service
+COPY --chown=node:node package*.json ./
+COPY --chown=node:node src ./src
 
 EXPOSE 5005
+
 CMD ["node", "src/server.js"]

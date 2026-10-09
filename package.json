@@ -1,16 +1,23 @@
 {
-  "name": "turf-booking-system",
+  "name": "turf-booking-system-monorepo",
   "version": "1.0.0",
-  "description": "Complete MERN Stack Turf Booking System",
-  "main": "index.js",
+  "description": "Microservices Monorepo for Turf Booking System",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "client"
+  ],
   "scripts": {
-    "start": "node backend/src/server.js",
-    "server": "cd backend && npm run dev",
-    "client": "cd frontend && npm run dev",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "dev:gateway": "cd services/api-gateway && npm run dev",
+    "dev:auth": "cd services/auth-service && npm run dev",
+    "dev:user": "cd services/user-service && npm run dev",
+    "dev:turf": "cd services/turf-service && npm run dev",
+    "dev:booking": "cd services/booking-service && npm run dev",
+    "dev:media": "cd services/media-service && npm run dev",
+    "dev:notification": "cd services/notification-service && npm run dev",
+    "dev:client": "cd client && npm run dev"
   },
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "concurrently": "^8.2.2"
   }
