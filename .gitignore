@@ -9,3 +9,15 @@ build/
 Coverage/
 .idea/
 .vscode/
+
+# Terraform downloaded files and local state
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Local environment files
+.env
+.env.*
+!.env.example
