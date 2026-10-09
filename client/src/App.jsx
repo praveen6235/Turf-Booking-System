@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loadUser } from './features/auth/authSlice';
 import MainLayout from './layouts/MainLayout';
@@ -28,6 +28,7 @@ function App() {
         <Route path="search" element={<SearchTurf />} />
         <Route path="turfs/:id" element={<TurfDetails />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
   );
