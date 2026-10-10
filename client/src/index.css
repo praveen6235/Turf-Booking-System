@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-light: var(--primary-light);
+  --color-accent: var(--accent);
+  
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-text-base: var(--text-base);
+  --color-text-muted: var(--text-muted);
+  --color-border-base: var(--border-base);
+  --color-input-bg: var(--input-bg);
+  
+  --font-sans: 'DM Sans', 'Manrope', system-ui, sans-serif;
+  --font-heading: 'Manrope', 'DM Sans', sans-serif;
+}
+
+:root {
+  /* Forest Breeze Color Palette */
+  /* Swatch 1 (Vanilla Cream): #F5E1C3 */
+  /* Swatch 2 (Deep Slate Blue): #485466 / #1D2633 */
+  /* Swatch 3 (Muted Sage Green): #748D87 */
+  /* Swatch 4 (Meadow Turf Green): #94B495 */
+
+  --bg-base: #111720; /* Deepest Forest Breeze Slate */
+  --bg-surface: #1B2432; /* Elevated Deep Slate Blue Surface */
+  --text-base: #F8F5EE; /* Soft Vanilla Ice White */
+  --text-muted: #A0B0B7;
+  --border-base: rgba(148, 180, 149, 0.25);
+  --input-bg: rgba(22, 30, 42, 0.85);
+  
+  --primary: #94B495; /* Meadow Turf Green */
+  --primary-dark: #748D87; /* Muted Sage Green */
+  --primary-light: #B2D8B3; /* Soft Breeze Green */
+  --accent: #F5E1C3; /* Warm Cream Vanilla Accent */
+}
+
+@layer base {
+  html {
+    @apply h-full scroll-smooth;
+  }
+  
+  body {
+    @apply min-h-full text-text-base font-sans antialiased selection:bg-primary selection:text-slate-950 transition-colors duration-300;
+    background-color: var(--bg-base);
+    background-image: 
+      radial-gradient(circle at 15% 15%, rgba(148, 180, 149, 0.22), transparent 42%),
+      radial-gradient(circle at 85% 75%, rgba(116, 141, 135, 0.18), transparent 42%),
+      radial-gradient(circle at 50% 50%, rgba(17, 23, 32, 0.9), rgba(17, 23, 32, 1));
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+
+  #root {
+    @apply min-h-screen flex flex-col;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply relative overflow-hidden bg-gradient-to-r from-[#748D87] via-[#85A886] to-[#94B495] hover:from-[#85A886] hover:to-[#A3C9A5] text-[#111720] font-extrabold py-3.5 px-7 rounded-xl shadow-[0_0_25px_rgba(148,180,149,0.4)] hover:shadow-[0_0_35px_rgba(178,216,179,0.7)] hover:-translate-y-1 transition-all duration-300 active:scale-[0.98] cursor-pointer tracking-wide;
+  }
+  
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 50%;
+    height: 200%;
+    background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.45) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotate(25deg);
+    transition: all 0.65s ease;
+  }
+
+  .btn-primary:hover::after {
+    left: 120%;
+  }
+
+  .glass-card {
+    @apply bg-[#1B2432]/85 backdrop-blur-2xl border border-[#94B495]/25 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:border-[#94B495]/60 hover:shadow-[0_25px_60px_rgba(148,180,149,0.25)] transition-all duration-500;
+  }
+  
+  .hover-glow-card {
+    @apply relative overflow-hidden transition-all duration-500 border border-border-base hover:border-primary hover:-translate-y-2.5 hover:shadow-[0_20px_45px_rgba(148,180,149,0.3)] hover:scale-[1.02];
+  }
+
+  .input-field {
+    @apply w-full bg-[#161E2A]/90 border border-slate-700/60 rounded-xl px-4 py-3.5 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#94B495]/60 focus:border-[#94B495] hover:border-slate-600 transition-all duration-300 shadow-inner;
+  }
+
+  .premium-text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#F5E1C3] via-[#94B495] to-[#B2D8B3];
+  }
+
+  .auth-glow-orb {
+    @apply absolute rounded-full blur-[110px] pointer-events-none opacity-45 animate-pulse;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 180, 149, 0.35);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+

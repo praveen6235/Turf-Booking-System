@@ -14,9 +14,30 @@ const app = express();
 // Set security HTTP headers
 app.use(helmet());
 
-// Enable CORS
+// Enable CORS for local dev as well as production Vercel apps
+const configuredOrigins = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+const allowedOrigins = Array.from(new Set([
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://turf-booking-system-rust.vercel.app',
+  ...configuredOrigins
+]));
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const isAllowed =
+      allowedOrigins.includes(origin) ||
+      /^http:\/\/localhost(:\d+)?$/.test(origin) ||
+      /^https:\/\/.*\.vercel\.app$/.test(origin);
+
+    if (isAllowed) return callback(null, true);
+    callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
   credentials: true,
 }));
 
