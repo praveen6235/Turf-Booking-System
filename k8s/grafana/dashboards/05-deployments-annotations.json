@@ -1,0 +1,50 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "datasource": "Prometheus",
+        "enable": true,
+        "iconColor": "#00ffcc",
+        "name": "GitHub CI/CD Deployments",
+        "expr": "github_deployment_events_total",
+        "step": "1m",
+        "tagKeys": "service",
+        "textFormat": "Deployed {{service}} commit {{sha}}",
+        "titleFormat": "CI/CD Deploy"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "title": "Service Traffic Overlaid with GitHub Deployment Annotations",
+      "type": "timeseries",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m])) by (service)",
+          "legendFormat": "{{service}} RPS"
+        }
+      ]
+    },
+    {
+      "title": "Total CI/CD Deployments by Service",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "sum(github_deployment_events_total) by (service)",
+          "legendFormat": "{{service}}"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["deployments", "annotations", "cicd"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "05 - Deployments & Annotations"
+}

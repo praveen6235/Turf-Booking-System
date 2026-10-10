@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booking-service
+  namespace: turf-booking-system
+  labels:
+    app: booking-service
+    service: booking-service
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: booking-service
+  template:
+    metadata:
+      labels:
+        app: booking-service
+        service: booking-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+      - name: booking-service
+        image: turf-booking/booking-service:latest
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - containerPort: 5003
+          name: http
+        env:
+        - name: PORT
+          value: "5003"
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: turf-config
+              key: NODE_ENV
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: turf-secrets
+              key: BOOKING_MONGO_URI
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: turf-secrets
+              key: JWT_SECRET
+        - name: TURF_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: turf-config
+              key: TURF_SERVICE_URL
+        - name: RAZORPAY_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: turf-secrets
+              key: RAZORPAY_KEY_ID
+        - name: RAZORPAY_KEY_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: turf-secrets
+              key: RAZORPAY_KEY_SECRET
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 5003
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5003
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 5003
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3

@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: turf-booking-system
+  labels:
+    app: api-gateway
+    service: api-gateway
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+        service: api-gateway
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+      - name: api-gateway
+        image: turf-booking/api-gateway:latest
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+        - name: PORT
+          value: "5000"
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: turf-config
+              key: NODE_ENV
+        - name: AUTH_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: turf-config
+              key: AUTH_SERVICE_URL
+        - name: TURF_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: turf-config
+              key: TURF_SERVICE_URL
+        - name: BOOKING_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: turf-config
+              key: BOOKING_SERVICE_URL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 5000
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3

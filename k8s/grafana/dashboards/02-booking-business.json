@@ -1,0 +1,58 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "title": "Bookings Created per Minute",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(turf_bookings_created_total[1m])) * 60",
+          "legendFormat": "Bookings / min"
+        }
+      ]
+    },
+    {
+      "title": "Slot Conflicts Prevented (Double Bookings)",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(booking_conflicts_total)",
+          "legendFormat": "Conflicts Prevented"
+        }
+      ]
+    },
+    {
+      "title": "User Registrations per Minute",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(user_registrations_total[1m])) * 60",
+          "legendFormat": "Registrations / min"
+        }
+      ]
+    },
+    {
+      "title": "Logins by Method (Password vs Google)",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(logins_total) by (method)",
+          "legendFormat": "{{method}}"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["business", "bookings"],
+  "time": { "from": "now-15m", "to": "now" },
+  "title": "02 - Booking Business Dashboard"
+}

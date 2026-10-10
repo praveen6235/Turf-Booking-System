@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: turf-config
+  namespace: turf-booking-system
+data:
+  NODE_ENV: "production"
+  PORT_GATEWAY: "5000"
+  PORT_AUTH: "5001"
+  PORT_TURF: "5002"
+  PORT_BOOKING: "5003"
+  AUTH_SERVICE_URL: "http://auth-service:5001"
+  TURF_SERVICE_URL: "http://turf-service:5002"
+  BOOKING_SERVICE_URL: "http://booking-service:5003"
+  CLIENT_URL: "http://localhost"

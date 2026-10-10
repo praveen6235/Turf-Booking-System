@@ -1,0 +1,44 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "title": "Incoming Traffic (RPS) vs Active Replicas",
+      "type": "timeseries",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m])) by (service)",
+          "legendFormat": "RPS: {{service}}"
+        },
+        {
+          "expr": "kube_deployment_status_replicas{namespace=\"turf-booking-system\"}",
+          "legendFormat": "Replicas: {{deployment}}"
+        }
+      ]
+    },
+    {
+      "title": "HPA Replica Count vs Max Limit",
+      "type": "timeseries",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"turf-booking-system\"}",
+          "legendFormat": "Current Replicas: {{horizontalpodautoscaler}}"
+        },
+        {
+          "expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"turf-booking-system\"}",
+          "legendFormat": "Max Replicas Limit: {{horizontalpodautoscaler}}"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["kubernetes", "scaling", "hpa"],
+  "time": { "from": "now-15m", "to": "now" },
+  "title": "03 - Kubernetes Scaling Live"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "webhook-service",
+  "version": "1.0.0",
+  "description": "GitHub Webhook & CI/CD Event Microservice for Turf Booking System",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "echo \"No test specified\" && exit 0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "prom-client": "^15.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

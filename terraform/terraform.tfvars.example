@@ -1,0 +1,9 @@
+aws_region         = "ap-south-1"
+environment        = "dev"
+instance_type      = "t3.micro"
+allowed_ssh_cidrs  = ["YOUR_LOCAL_IP/32"]
+account_id_suffix  = "turf2026demo"
+jwt_secret         = "super_secret_jwt_key_for_turf_booking_system_2026"
+auth_mongo_uri     = "mongodb+srv://user:pass@cluster.mongodb.net/turf_auth?retryWrites=true&w=majority"
+turf_mongo_uri     = "mongodb+srv://user:pass@cluster.mongodb.net/turf_turf?retryWrites=true&w=majority"
+booking_mongo_uri  = "mongodb+srv://user:pass@cluster.mongodb.net/turf_booking?retryWrites=true&w=majority"

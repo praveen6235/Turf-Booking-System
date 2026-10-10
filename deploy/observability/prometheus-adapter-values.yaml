@@ -1,0 +1,35 @@
+prometheus:
+  url: http://prometheus-kube-prometheus-prometheus.default.svc.cluster.local
+  port: 9090
+
+rules:
+  default: false
+  custom:
+    - seriesQuery: 'http_requests_total{namespace!="",pod!=""}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+          service: {resource: "service"}
+      name:
+        matches: "^(.*)_total"
+        as: "${1}_per_second"
+      metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>}[2m])) by (<<.GroupBy>>)'
+
+    - seriesQuery: 'active_booking_requests_in_flight{namespace!="",pod!=""}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+      name:
+        as: "active_booking_requests_in_flight"
+      metricsQuery: 'sum(<<.Series>>{<<.LabelMatchers>>}) by (<<.GroupBy>>)'
+
+    - seriesQuery: 'turf_search_requests_total{namespace!="",pod!=""}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+      name:
+        as: "turf_search_requests_per_second"
+      metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>}[2m])) by (<<.GroupBy>>)'

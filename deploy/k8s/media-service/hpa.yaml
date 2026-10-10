@@ -1,0 +1,40 @@
+# Standard HPA fallback
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: media-service-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: media-service
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+---
+# KEDA ScaledObject Option: Enables scale-to-zero for media-service during idle periods
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: media-service-keda-scaler
+  namespace: default
+spec:
+  scaleTargetRef:
+    name: media-service
+  minReplicaCount: 0  # Scales to zero when no image upload traffic is active
+  maxReplicaCount: 5
+  cooldownPeriod: 300
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus-kube-prometheus-prometheus.default.svc.cluster.local:9090
+        metricName: http_requests_total
+        query: sum(rate(http_requests_total{service="media-service"}[2m]))
+        threshold: '1'
