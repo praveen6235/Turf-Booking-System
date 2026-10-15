@@ -159,7 +159,6 @@ jobs:
           echo "All Kubernetes manifests compiled and validated successfully."
 
       - name: Notify webhook
-        if: ${{ secrets.WEBHOOK_SERVICE_URL != '' }}
         continue-on-error: true
         env:
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
