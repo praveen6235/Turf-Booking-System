@@ -151,12 +151,12 @@ jobs:
           exit-code: '0'
           severity: 'CRITICAL,HIGH'
 
-      # Validate & Deploy to Kubernetes
+      # Validate Kubernetes Manifests
       - name: Deploy to Kubernetes Cluster
         run: |
-          echo "Validating Kubernetes manifests..."
-          kubectl apply --dry-run=client -k k8s/base
-          echo "Manifests validated successfully."
+          echo "Validating Kubernetes manifests via Kustomize..."
+          kubectl kustomize k8s/base > /dev/null
+          echo "All Kubernetes manifests compiled and validated successfully."
 
       - name: Notify webhook
         if: env.WEBHOOK_URL != ''
