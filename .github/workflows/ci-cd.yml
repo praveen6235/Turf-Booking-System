@@ -159,11 +159,16 @@ jobs:
           echo "All Kubernetes manifests compiled and validated successfully."
 
       - name: Notify webhook
-        if: env.WEBHOOK_URL != ''
+        if: ${{ secrets.WEBHOOK_SERVICE_URL != '' }}
+        continue-on-error: true
         env:
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_SERVICE_URL }}
         run: |
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "WEBHOOK_URL not set, skipping notification."
+            exit 0
+          fi
           BODY="{\"ref\":\"refs/heads/main\",\"after\":\"${{ github.sha }}\"}"
           SIG=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | sed 's/^.* //')
           curl -X POST "$WEBHOOK_URL/webhook/github" \
