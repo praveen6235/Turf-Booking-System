@@ -28,19 +28,19 @@ jobs:
       - name: Test Auth Service
         run: |
           cd services/auth-service
-          npm ci
+          npm install
           npm test
 
       - name: Test Turf Service
         run: |
           cd services/turf-service
-          npm ci
+          npm install
           npm test
 
       - name: Test Booking Service
         run: |
           cd services/booking-service
-          npm ci
+          npm install
           npm test
 
   detect-changes:
