@@ -35,23 +35,28 @@ app.get('/metrics', getMetricsHandler);
 
 // Reverse Proxy Route Routing
 app.use('/api/v1/auth', proxy(AUTH_SERVICE_URL, {
-  proxyReqPathResolver: req => `/api/v1/auth${req.url}`
+  proxyReqPathResolver: req => `/api/v1/auth${req.url}`,
+  parseReqBody: false
 }));
 
 app.use('/api/v1/users', proxy(AUTH_SERVICE_URL, {
-  proxyReqPathResolver: req => `/api/v1/users${req.url}`
+  proxyReqPathResolver: req => `/api/v1/users${req.url}`,
+  parseReqBody: false
 }));
 
 app.use('/api/v1/turfs', proxy(TURF_SERVICE_URL, {
-  proxyReqPathResolver: req => `/api/v1/turfs${req.url}`
+  proxyReqPathResolver: req => `/api/v1/turfs${req.url}`,
+  parseReqBody: false
 }));
 
 app.use('/api/v1/reviews', proxy(TURF_SERVICE_URL, {
-  proxyReqPathResolver: req => `/api/v1/reviews${req.url}`
+  proxyReqPathResolver: req => `/api/v1/reviews${req.url}`,
+  parseReqBody: false
 }));
 
 app.use('/api/v1/bookings', proxy(BOOKING_SERVICE_URL, {
-  proxyReqPathResolver: req => `/api/v1/bookings${req.url}`
+  proxyReqPathResolver: req => `/api/v1/bookings${req.url}`,
+  parseReqBody: false
 }));
 
 app.use('*', (req, res) => {

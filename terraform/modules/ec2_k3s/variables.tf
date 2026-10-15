@@ -24,3 +24,9 @@ variable "iam_instance_profile" {
   default     = null
   description = "IAM instance profile name"
 }
+
+variable "ami_id" {
+  type        = string
+  default     = "ami-0dee22c13ea7a9a67"
+  description = "AMI ID for EC2 instance (Ubuntu 22.04 LTS in ap-south-1)"
+}
